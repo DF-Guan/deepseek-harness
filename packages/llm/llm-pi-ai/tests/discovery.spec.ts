@@ -143,6 +143,34 @@ describe('draft-provider model discovery', () => {
     expect(server.headers[0]?.['user-agent']).toBe(userAgent())
   })
 
+  it('reads the input modalities a listing declares, in either spelling', async () => {
+    const server = await listingServer({
+      body: JSON.stringify({
+        data: [
+          { id: 'acme-gateway-flat', input_modalities: ['text', 'image'] },
+          // A gateway that names each modality as an object rather than a bare string.
+          { id: 'acme-gateway-objects', input_modalities: [{ type: 'text' }, { type: 'image' }] },
+          { id: 'acme-gateway-nested', architecture: { input_modalities: ['text', 'image', 'file'] } },
+          { id: 'acme-gateway-camel', inputModalities: ['text'] },
+          // Values outside the vocabulary are dropped, and dropping all of them
+          // leaves the field absent rather than an empty declaration.
+          { id: 'acme-gateway-unknown', input_modalities: [{ type: 'file' }, { type: 'audio' }] },
+          { id: 'acme-gateway-silent' },
+        ],
+      }),
+    })
+    const ctx = await harness()
+
+    expect(await ctx.llm.discoverModels('llm-pi-ai', { baseURL: server.url })).toEqual([
+      { id: 'acme-gateway-flat', name: 'acme-gateway-flat', inputModalities: ['text', 'image'] },
+      { id: 'acme-gateway-objects', name: 'acme-gateway-objects', inputModalities: ['text', 'image'] },
+      { id: 'acme-gateway-nested', name: 'acme-gateway-nested', inputModalities: ['text', 'image'] },
+      { id: 'acme-gateway-camel', name: 'acme-gateway-camel', inputModalities: ['text'] },
+      { id: 'acme-gateway-unknown', name: 'acme-gateway-unknown' },
+      { id: 'acme-gateway-silent', name: 'acme-gateway-silent' },
+    ])
+  })
+
   it('reads an enriched models map using route ids and nested capacities', async () => {
     const server = await listingServer({
       body: JSON.stringify({
@@ -494,9 +522,11 @@ describe('probe key format', () => {
 
 /**
  * Replies recorded from live endpoints on 2026-09-02, plus the reply
- * Anthropic's List Models reference documents. Each file keeps the reply's
- * top-level fields and entry objects verbatim; only a recorded entry list is
- * cut down to the named entries so the archive stays small.
+ * Anthropic's List Models reference documents, and one gateway recorded on
+ * 2026-10-28 whose modality list names each entry as an object. Each file
+ * keeps the reply's top-level fields and entry objects verbatim; only a
+ * recorded entry list is cut down to the named entries so the archive stays
+ * small.
  */
 const RECORDED_LISTINGS = [
   {
@@ -504,10 +534,39 @@ const RECORDED_LISTINGS = [
     file: 'openrouter-2026-09-02.json',
     api: 'openai-completions',
     models: [
-      { id: 'anthropic/claude-fable-5.1', name: 'Anthropic: Claude Fable 5.1', contextWindow: 1_000_000, maxTokens: 128_000 },
+      {
+        id: 'anthropic/claude-fable-5.1',
+        name: 'Anthropic: Claude Fable 5.1',
+        contextWindow: 1_000_000,
+        maxTokens: 128_000,
+        inputModalities: ['text', 'image'],
+      },
       // The router's own aggregate route reports no completion cap.
-      { id: 'openrouter/auto-beta', name: 'Auto Router (Beta)', contextWindow: 2_000_000 },
-      { id: 'deepseek/deepseek-v4-flash', name: 'DeepSeek: DeepSeek V4 Flash 0423', contextWindow: 1_048_576, maxTokens: 384_000 },
+      {
+        id: 'openrouter/auto-beta',
+        name: 'Auto Router (Beta)',
+        contextWindow: 2_000_000,
+        inputModalities: ['text', 'image'],
+      },
+      {
+        id: 'deepseek/deepseek-v4-flash',
+        name: 'DeepSeek: DeepSeek V4 Flash 0423',
+        contextWindow: 1_048_576,
+        maxTokens: 384_000,
+        inputModalities: ['text'],
+      },
+    ],
+  },
+  {
+    name: 'a gateway naming each modality as an object',
+    file: 'intern-2026-10-28.json',
+    api: 'openai-completions',
+    // This endpoint declares no capacity in the fields this build reads, so
+    // each row carries its modalities alone.
+    models: [
+      { id: 'Sage-A1.5', name: 'Sage-A1.5', inputModalities: ['text', 'image'] },
+      { id: 'glm-5.3', name: 'GLM-5.3', inputModalities: ['text'] },
+      { id: 'intern-s2', name: '书生-S2', inputModalities: ['text', 'image'] },
     ],
   },
   {

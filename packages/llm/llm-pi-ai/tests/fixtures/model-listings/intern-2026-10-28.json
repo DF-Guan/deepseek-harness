@@ -1,0 +1,287 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "schema_version": "2.4",
+      "id": "Sage-A1.5",
+      "name": "Sage-A1.5",
+      "created": 1792401042,
+      "input_modalities": [
+        {
+          "type": "text",
+          "supported_inputs": {
+            "max_context_length": {
+              "value": 524288,
+              "unit": "token"
+            }
+          },
+          "capacity": [
+            {
+              "type": "prompt",
+              "unit": "token",
+              "per": "minute",
+              "value": 1880000
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "supported_inputs": {
+            "sources": {
+              "type": "enum",
+              "values": [
+                "url",
+                "base64"
+              ]
+            }
+          }
+        }
+      ],
+      "output_modalities": [
+        {
+          "type": "text",
+          "max_length": {
+            "value": 524288,
+            "unit": "token"
+          },
+          "streaming": true,
+          "supported_parameters": {
+            "max_tokens": {
+              "type": "integer",
+              "min": 1,
+              "max": 524288,
+              "unit": "token"
+            },
+            "stop": {
+              "type": "array",
+              "max_items": 4
+            },
+            "structured_outputs": {
+              "type": "boolean"
+            },
+            "temperature": {
+              "type": "range",
+              "min": 0,
+              "max": 2
+            },
+            "tools": {
+              "type": "boolean"
+            },
+            "top_p": {
+              "type": "range",
+              "min": 0,
+              "max": 1
+            }
+          }
+        }
+      ],
+      "capacity": [
+        {
+          "type": "request",
+          "unit": "request",
+          "per": "minute",
+          "value": 375
+        }
+      ],
+      "is_ready": true,
+      "openrouter": {
+        "slug": "Sage-A1.5"
+      },
+      "object": "model",
+      "owned_by": "tokenplan",
+      "status": "active"
+    },
+    {
+      "schema_version": "2.4",
+      "id": "glm-5.3",
+      "name": "GLM-5.3",
+      "created": 1789200156,
+      "input_modalities": [
+        {
+          "type": "text",
+          "supported_inputs": {
+            "max_context_length": {
+              "value": 1048576,
+              "unit": "token"
+            }
+          },
+          "pricing": [
+            {
+              "type": "prompt",
+              "unit": "token",
+              "cost_usd": "0.008"
+            },
+            {
+              "type": "cached_prompt",
+              "unit": "token",
+              "cost_usd": "0.002"
+            }
+          ],
+          "capacity": [
+            {
+              "type": "prompt",
+              "unit": "token",
+              "per": "minute",
+              "value": 55000000
+            }
+          ]
+        }
+      ],
+      "output_modalities": [
+        {
+          "type": "text",
+          "max_length": {
+            "value": 1048576,
+            "unit": "token"
+          },
+          "streaming": true,
+          "supported_parameters": {
+            "max_tokens": {
+              "type": "integer",
+              "min": 1,
+              "max": 1048576,
+              "unit": "token"
+            },
+            "reasoning": {
+              "type": "boolean"
+            },
+            "stop": {
+              "type": "array",
+              "max_items": 4
+            },
+            "structured_outputs": {
+              "type": "boolean"
+            },
+            "temperature": {
+              "type": "range",
+              "min": 0,
+              "max": 2
+            },
+            "tools": {
+              "type": "boolean"
+            },
+            "top_p": {
+              "type": "range",
+              "min": 0,
+              "max": 1
+            }
+          },
+          "pricing": [
+            {
+              "type": "completion",
+              "unit": "token",
+              "cost_usd": "0.028"
+            }
+          ]
+        }
+      ],
+      "capacity": [
+        {
+          "type": "request",
+          "unit": "request",
+          "per": "minute",
+          "value": 980
+        }
+      ],
+      "is_ready": true,
+      "openrouter": {
+        "slug": "glm-5.3"
+      },
+      "object": "model",
+      "owned_by": "tokenplan",
+      "status": "active"
+    },
+    {
+      "schema_version": "2.4",
+      "id": "intern-s2",
+      "name": "书生-S2",
+      "created": 1789199907,
+      "input_modalities": [
+        {
+          "type": "text",
+          "supported_inputs": {
+            "max_context_length": {
+              "value": 262144,
+              "unit": "token"
+            }
+          },
+          "capacity": [
+            {
+              "type": "prompt",
+              "unit": "token",
+              "per": "minute",
+              "value": 5000000000
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "supported_inputs": {
+            "sources": {
+              "type": "enum",
+              "values": [
+                "url",
+                "base64"
+              ]
+            }
+          }
+        }
+      ],
+      "output_modalities": [
+        {
+          "type": "text",
+          "max_length": {
+            "value": 262144,
+            "unit": "token"
+          },
+          "streaming": true,
+          "supported_parameters": {
+            "max_tokens": {
+              "type": "integer",
+              "min": 1,
+              "max": 262144,
+              "unit": "token"
+            },
+            "stop": {
+              "type": "array",
+              "max_items": 4
+            },
+            "structured_outputs": {
+              "type": "boolean"
+            },
+            "temperature": {
+              "type": "range",
+              "min": 0,
+              "max": 2
+            },
+            "tools": {
+              "type": "boolean"
+            },
+            "top_p": {
+              "type": "range",
+              "min": 0,
+              "max": 1
+            }
+          }
+        }
+      ],
+      "capacity": [
+        {
+          "type": "request",
+          "unit": "request",
+          "per": "minute",
+          "value": 2000
+        }
+      ],
+      "is_ready": true,
+      "openrouter": {
+        "slug": "intern-s2"
+      },
+      "object": "model",
+      "owned_by": "tokenplan",
+      "status": "active"
+    }
+  ],
+  "models": [],
+  "total_count": 13
+}

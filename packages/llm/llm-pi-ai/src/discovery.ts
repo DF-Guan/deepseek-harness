@@ -23,7 +23,7 @@
  */
 
 import { INVALID_CREDENTIAL_CODE, LlmError, normalizeApiKey } from '@deepseek-ai/dsh-llm'
-import type { LlmDiscoveredModel, LlmModelDiscoveryOperation } from '@deepseek-ai/dsh-llm'
+import type { LlmDiscoveredModel, LlmModelDiscoveryOperation, ModelModality } from '@deepseek-ai/dsh-llm'
 import { attributionHeaders } from '@deepseek-ai/dsh-llm'
 import { catalogModels } from './catalog.ts'
 
@@ -57,6 +57,27 @@ const ANTHROPIC_MODEL_LIMIT = 1000
  */
 const MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 
+/**
+ * Input modalities this build can send, in the order a selector lists them.
+ * The vocabulary is pi-ai's: a modality it cannot name is dropped rather than
+ * adopted as a capability the adapter could not carry.
+ */
+const LISTED_MODALITIES = ['text', 'image'] as const satisfies readonly ModelModality[]
+
+/**
+ * One entry of a declared `input_modalities` array. Endpoints spell the same
+ * list two ways — a bare modality name, or an object naming it under `type` —
+ * so both are read.
+ */
+interface ModalityEntry {
+  type?: unknown
+}
+
+/** Per-route architecture OpenRouter nests the modality lists under. */
+interface ListingArchitecture {
+  input_modalities?: unknown
+}
+
 /** Capacity fields nested by enriched model-directory replies. */
 interface ListingLimit {
   context?: unknown
@@ -83,6 +104,10 @@ interface ListingEntry {
   max_tokens?: unknown
   max_output_tokens?: unknown
   maxTokens?: unknown
+  /** Declared accepted request modalities, in either gateway spelling. */
+  input_modalities?: unknown
+  inputModalities?: unknown
+  architecture?: ListingArchitecture | null
   limit?: ListingLimit | null
   top_provider?: ListingTopProvider | null
 }
@@ -99,6 +124,34 @@ function capacity(...candidates: readonly unknown[]): number | undefined {
 function label(...candidates: readonly unknown[]): string | undefined {
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && candidate.length > 0) return candidate
+  }
+  return undefined
+}
+
+/**
+ * One candidate modality list as this build's vocabulary, in the order the
+ * endpoint declares it, or `undefined` when it names nothing this build sends.
+ * Entries outside the vocabulary are dropped rather than reported: a modality
+ * the adapter cannot carry would be adopted as a capability it does not have.
+ */
+function listedModalities(value: unknown): ModelModality[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const rows: readonly unknown[] = value
+  const named: string[] = []
+  for (const row of rows) {
+    const modality = typeof row === 'string' ? row : (row as ModalityEntry | null)?.type
+    if (typeof modality === 'string') named.push(modality)
+  }
+  const known = LISTED_MODALITIES.filter(modality => named.includes(modality))
+  if (known.length === 0) return undefined
+  return known.toSorted((left, right) => named.indexOf(left) - named.indexOf(right))
+}
+
+/** The first candidate that declares a modality this build sends. */
+function modalities(...candidates: readonly unknown[]): ModelModality[] | undefined {
+  for (const candidate of candidates) {
+    const known = listedModalities(candidate)
+    if (known !== undefined) return known
   }
   return undefined
 }
@@ -177,6 +230,11 @@ async function readBounded(response: Response, url: string): Promise<string> {
  * interrogation: a single malformed row should not deny the user the rest of
  * a working endpoint's catalog. Missing names fall back to the adopted id so
  * the Web form receives a complete human-readable row.
+ *
+ * Declared input modalities are read in the order the endpoint lists them, and
+ * only when the entry names one this build sends. An entry that declares none
+ * keeps the field absent, so a listing that states nothing still reads as
+ * unknown rather than as text-only.
  */
 function readListing(body: unknown): LlmDiscoveredModel[] {
   const listing = body as { data?: unknown; models?: unknown } | null
@@ -219,11 +277,17 @@ function readListing(body: unknown): LlmDiscoveredModel[] {
       entry?.limit?.output,
       entry?.top_provider?.max_completion_tokens,
     )
+    const inputModalities = modalities(
+      entry?.input_modalities,
+      entry?.inputModalities,
+      entry?.architecture?.input_modalities,
+    )
     models.push({
       id,
       name,
       ...contextWindow === undefined ? {} : { contextWindow },
       ...maxTokens === undefined ? {} : { maxTokens },
+      ...inputModalities === undefined ? {} : { inputModalities },
     })
   }
   return models
